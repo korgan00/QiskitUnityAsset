@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class QASMExecutorExample : MonoBehaviour {
+namespace Qiskit.Example {
+    public class QASMExecutorExample : MonoBehaviour {
 
-    [Multiline(15)]
-    public string qasmString =
-@"include ""qelib1.inc""; 
+        [Multiline(15)]
+        public string qasmString =
+    @"include ""qelib1.inc""; 
 qreg q[10]; 
 creg c[10]; 
 h q[0];
@@ -30,10 +31,11 @@ measure q[7] -> c[7];
 measure q[8] -> c[8]; 
 measure q[9] -> c[9];";
 
-    [ContextMenu("Execute")]
-    private void Launch() {
-        QASMSession.Execute(qasmString, (response) => {
-            Debug.Log("Execution result count: " + response.result.Count);
-        });
+        [ContextMenu("Execute")]
+        private void Launch() {
+            QASMSession.Execute(qasmString, (response) => {
+                Debug.Log("Execution result count: " + response.result.Count);
+            });
+        }
     }
 }

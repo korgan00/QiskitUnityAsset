@@ -5,22 +5,24 @@ using System.Text;
 using System.Threading.Tasks;
 
 
-public class QASMExecutable {
+namespace Qiskit {
+    public class QASMExecutable {
 
-    public string code { get; private set; }
+        public string code { get; private set; }
 
-    public int shots { get; private set; }
-    public bool useShots => shots > 0;
-
-
-    public QASMExecutable(string code, int shots = 0) {
-        this.code = code;
-        this.shots = shots;
-    }
+        public int shots { get; private set; }
+        public bool useShots => shots > 0;
 
 
-    //  User-defined conversion from string to QASMExecutable
-    public static implicit operator QASMExecutable(string code) {
-        return new QASMExecutable(code);
+        public QASMExecutable(string code, int shots = 0) {
+            this.code = code;
+            this.shots = shots;
+        }
+
+
+        //  User-defined conversion from string to QASMExecutable
+        public static implicit operator QASMExecutable(string code) {
+            return new QASMExecutable(code);
+        }
     }
 }
