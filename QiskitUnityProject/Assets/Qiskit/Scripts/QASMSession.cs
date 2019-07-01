@@ -8,6 +8,8 @@ namespace Qiskit {
 
     public class QASMSession : MonoBehaviour {
 
+        private const bool API_TOKEN_STRING_REQUIRED = true;
+
         [Header("IBMQ Configuration")]
         public string apiTokenString = "";
         // Server To Request
@@ -46,6 +48,7 @@ namespace Qiskit {
 
         private void Awake() {
             _instance = this;
+            _backendConfig = null;
         }
 
         public static void Execute(string qasmCode, OnExecuted onExecuted) => instance?.ExecuteCode(qasmCode, onExecuted);
@@ -143,11 +146,17 @@ namespace Qiskit {
         private void GenericExecution(QASMExecutable qasmExe, bool useMemory, OnJsonResult onJsonResult) {
             // API request
             List<IMultipartFormSection> formData = new List<IMultipartFormSection> {
-            // QASM parameter
-            new MultipartFormDataSection("qasm", qasmExe.code),
-            new MultipartFormDataSection("memory", useMemory ? "True" : "False")
-        };
+                // QASM parameter
+                new MultipartFormDataSection("qasm", qasmExe.code),
+                new MultipartFormDataSection("memory", useMemory ? "True" : "False")
+            };
+
+
             // Api token parameter
+            if (apiTokenString == "" && API_TOKEN_STRING_REQUIRED) {
+                throw new System.Exception("API Token is required to run QASM");
+            }
+
             if (apiTokenString != "") {
                 formData.Add(new MultipartFormDataSection("api_token", apiTokenString));
             }
