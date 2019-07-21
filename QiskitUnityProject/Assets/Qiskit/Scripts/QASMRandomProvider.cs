@@ -1,8 +1,9 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class QASMRandomProvider : MonoBehaviour {
+public partial class QASMRandomProvider : MonoBehaviour {
 
     /*
      * Optimization: the reinterpret casts (bitwise) and other features
@@ -34,9 +35,9 @@ public class QASMRandomProvider : MonoBehaviour {
 
     private QASMSession executionSession => specificSession ?? QASMSession.instance;
 
-    public delegate void OnRandomGenerated<T>(T generated);
+    //public delegate void OnRandomGenerated<T>(T generated);
 
-    public delegate void OnRandomPoolGenerated<T>(List<T> pool);
+    //public delegate void OnRandomPoolGenerated<T>(List<T> pool);
 
     #region Single Value Generation Methods
 
@@ -46,7 +47,7 @@ public class QASMRandomProvider : MonoBehaviour {
     /// the callback <see cref="OnRandomBoolGenerated"/>
     /// </summary>
     /// <param name="onRandomBoolGenerated">The callback called when the bool is available</param>
-    public void GenerateBool(OnRandomGenerated<bool> onRandomBoolGenerated) {
+    public void GenerateBool(Action<bool> onRandomBoolGenerated) {
         // For bool values should be an even number of shots
         QASMExecutable qasmExe = new QASMExecutable(_qasmSingleBoolCode, 15);
 
@@ -61,7 +62,7 @@ public class QASMRandomProvider : MonoBehaviour {
     /// the callback <see cref="OnRandomByteGenerated"/>
     /// </summary>
     /// <param name="onRandomByteGenerated">The callback called when the byte is available</param>
-    public void GenerateByte(OnRandomGenerated<byte> onRandomByteGenerated) {
+    public void GenerateByte(Action<byte> onRandomByteGenerated) {
         GenerateIntNbits(8, (i) => onRandomByteGenerated((byte)i));
     }
 
@@ -71,7 +72,7 @@ public class QASMRandomProvider : MonoBehaviour {
     /// the callback <see cref="OnRandomIntGenerated"/>
     /// </summary>
     /// <param name="onRandomIntGenerated">The callback called when the int is available</param>
-    public void GenerateInt16(OnRandomGenerated<int> onRandomIntGenerated) {
+    public void GenerateInt16(Action<int> onRandomIntGenerated) {
         GenerateIntNbits(16, onRandomIntGenerated);
     }
 
@@ -81,7 +82,7 @@ public class QASMRandomProvider : MonoBehaviour {
     /// the callback <see cref="OnRandomIntGenerated"/>
     /// </summary>
     /// <param name="onRandomIntGenerated">The callback called when the int is available</param>
-    public void GenerateInt32(OnRandomGenerated<int> onRandomIntGenerated) {
+    public void GenerateInt32(Action<int> onRandomIntGenerated) {
         GenerateIntNbits(32, onRandomIntGenerated);
     }
 
@@ -91,7 +92,7 @@ public class QASMRandomProvider : MonoBehaviour {
     /// the callback <see cref="OnRandomFloatGenerated"/>
     /// </summary>
     /// <param name="onRandomFloatGenerated">The callback called when the float is available</param>
-    public void GenerateFloat(OnRandomGenerated<float> onRandomFloatGenerated) {
+    public void GenerateFloat(Action<float> onRandomFloatGenerated) {
         GenerateInt32((i) => {
             onRandomFloatGenerated(Int32ToFloat(i));
         });
@@ -105,7 +106,7 @@ public class QASMRandomProvider : MonoBehaviour {
     /// <param name="min">The smallest number generated</param>
     /// <param name="max">The largest number generated</param>
     /// <param name="onRandomFloatGenerated">The callback called when the float is available</param>
-    public void GenerateFloatInRange(float min, float max, OnRandomGenerated<float> onRandomFloatGenerated) {
+    public void GenerateFloatInRange(float min, float max, Action<float> onRandomFloatGenerated) {
         GenerateInt32((i) => {
             onRandomFloatGenerated(Int32ToFloat(i, min, max));
         });
@@ -118,7 +119,7 @@ public class QASMRandomProvider : MonoBehaviour {
     /// </summary>
     /// <param name="bits">The number of bits used to generate the int</param>
     /// <param name="onRandomFloatGenerated">The callback called when the int is available</param>
-    public void GenerateIntNbits(int bits, OnRandomGenerated<int> onRandomIntGenerated) {
+    public void GenerateIntNbits(int bits, Action<int> onRandomIntGenerated) {
         executionSession.RequestBackendConfig((backendConfig) => {
             int codeRegs = Mathf.Min(backendConfig.qubitsCount, bits);
             int shotsNeeded = Mathf.CeilToInt((float)bits / codeRegs);
@@ -146,7 +147,7 @@ public class QASMRandomProvider : MonoBehaviour {
     /// </summary>
     /// <param name="count">The amount of booleans generated</param>
     /// <param name="onRandomBoolPoolGenerated">The callback called when the pool is available</param>
-    public void GenerateBoolPool(int count, OnRandomPoolGenerated<bool> onRandomBoolPoolGenerated) {
+    public void GenerateBoolPool(int count, Action<List<bool>> onRandomBoolPoolGenerated) {
         QASMExecutable qasmExe = new QASMExecutable(_qasmSingleBoolCode, count);
 
         executionSession.ExecuteCodeRawResult(qasmExe, (response) => {
@@ -165,7 +166,7 @@ public class QASMRandomProvider : MonoBehaviour {
     /// </summary>
     /// <param name="count">The amount of bytes generated</param>
     /// <param name="onRandomBytePoolGenerated">The callback called when the pool is available</param>
-    public void GenerateBytePool(int count, OnRandomPoolGenerated<byte> onRandomBytePoolGenerated) {
+    public void GenerateBytePool(int count, Action<List<byte>> onRandomBytePoolGenerated) {
         GenerateIntNbitsPool(8, count, (intPool) => {
             // cast from int to byte
             List<byte> bytePool = new List<byte>();
@@ -183,7 +184,7 @@ public class QASMRandomProvider : MonoBehaviour {
     /// </summary>
     /// <param name="count">The amount of 16bit ints generated</param>
     /// <param name="onRandomIntPoolGenerated">The callback called when the pool is available</param>
-    public void GenerateInt16Pool(int count, OnRandomPoolGenerated<int> onRandomIntPoolGenerated) {
+    public void GenerateInt16Pool(int count, Action<List<int>> onRandomIntPoolGenerated) {
         GenerateIntNbitsPool(16, count, onRandomIntPoolGenerated);
     }
 
@@ -194,7 +195,7 @@ public class QASMRandomProvider : MonoBehaviour {
     /// </summary>
     /// <param name="count">The amount of ints generated</param>
     /// <param name="onRandomIntPoolGenerated">The callback called when the pool is available</param>
-    public void GenerateInt32Pool(int count, OnRandomPoolGenerated<int> onRandomIntPoolGenerated) {
+    public void GenerateInt32Pool(int count, Action<List<int>> onRandomIntPoolGenerated) {
         GenerateIntNbitsPool(32, count, onRandomIntPoolGenerated);
     }
 
@@ -205,7 +206,7 @@ public class QASMRandomProvider : MonoBehaviour {
     /// </summary>
     /// <param name="count">The amount of floats generated</param>
     /// <param name="onRandomFloatPoolGenerated">The callback called when the pool is available</param>
-    public void GenerateFloatPool(int count, OnRandomPoolGenerated<float> onRandomFloatPoolGenerated) {
+    public void GenerateFloatPool(int count, Action<List<float>> onRandomFloatPoolGenerated) {
         GenerateIntNbitsPool(32, count, (intPool) => {
             List<float> floatPool = new List<float>();
             foreach (int i in intPool) {
@@ -224,7 +225,7 @@ public class QASMRandomProvider : MonoBehaviour {
     /// <param name="min">The smallest number generated</param>
     /// <param name="max">The largest number generated</param>
     /// <param name="onRandomFloatPoolGenerated">The callback called when the pool is available</param>
-    public void GenerateFloatPoolInRange(int count, float min, float max, OnRandomPoolGenerated<float> onRandomFloatPoolGenerated) {
+    public void GenerateFloatPoolInRange(int count, float min, float max, Action<List<float>> onRandomFloatPoolGenerated) {
         GenerateIntNbitsPool(32, count, (intPool) => {
             List<float> floatPool = new List<float>();
             foreach (int i in intPool) {
@@ -244,7 +245,7 @@ public class QASMRandomProvider : MonoBehaviour {
     /// <param name="bits">The number of bits used to generate the int</param>
     /// <param name="count">The amount of ints generated</param>
     /// <param name="onRandomIntPoolGenerated">The callback called when the pool is available</param>
-    public void GenerateIntNbitsPool(int bits, int count, OnRandomPoolGenerated<int> onRandomIntPoolGenerated) {
+    public void GenerateIntNbitsPool(int bits, int count, Action<List<int>> onRandomIntPoolGenerated) {
         executionSession.RequestBackendConfig((backendConfig) => {
             int codeRegs = Mathf.Min(backendConfig.qubitsCount, bits);
             int shotsNeededPerItem = Mathf.CeilToInt((float)bits / codeRegs);
@@ -268,120 +269,85 @@ public class QASMRandomProvider : MonoBehaviour {
 
     #endregion
 
-    public class InfiniteRandomQueue<T> where T : struct {
 
-        public enum RefillPolicy {
-            KEEP_FULL,
-            HALF_QUEUE,
-            EMPTY
-        }
+    #region Pool Of Values Generation Methods
 
-
-        private delegate void RandomRequest();
-        public delegate void RandomProvider(int count, OnRandomPoolGenerated<T> pool);
-
-        private RandomProvider _provider;
-        
-        private List<T> _generatedRandoms;
-        private Queue<RandomRequest> _randomRequests;
-
-        private RefillPolicy _policy;
-
-        public int count => _generatedRandoms.Count;
-        public bool isEmpty => count == 0;
-
-        private bool _requesting;
-
-        private int _capacity;
-
-        protected InfiniteRandomQueue(int capacity, RandomProvider randomProviderFunction, RefillPolicy policy = RefillPolicy.HALF_QUEUE) {
-            _generatedRandoms = new List<T>();
-            _randomRequests = new Queue<RandomRequest>();
-            _requesting = false;
-            _policy = policy;
-            _capacity = capacity;
-            _provider = randomProviderFunction;
-            CheckListState();
-        }
-
-        /// <summary>
-        /// Removes and returns a random.
-        /// </summary>
-        /// <returns>The random</returns>
-        public T PopNext() {
-
-            T t = _generatedRandoms[count-1];
-            _generatedRandoms.RemoveAt(count - 1);
-            CheckListState();
-
-            return t;
-        }
-
-        /// <summary>
-        /// Returns a random.
-        /// </summary>
-        /// <returns>The random</returns>
-        public T PeekNext() {
-            T t = _generatedRandoms[count - 1];
-            CheckListState();
-
-            return t;
-        }
-
-        /// <summary>
-        /// Removes and returns a random.
-        /// </summary>
-        /// <returns>The random</returns>
-        public void PopNext(OnRandomGenerated<T> onRandomGenerated) {
-            if (isEmpty) {
-                _randomRequests.Enqueue(() => onRandomGenerated(PopNext()));
-            } else {
-                onRandomGenerated(PopNext());
-            }
-
-            CheckListState();
-        }
-
-        /// <summary>
-        /// Returns a random.
-        /// </summary>
-        /// <returns>The random</returns>
-        public void PeekNext(OnRandomGenerated<T> onRandomGenerated) {
-            if (isEmpty) {
-                _randomRequests.Enqueue(() => onRandomGenerated(PeekNext()));
-            } else {
-                onRandomGenerated(PeekNext());
-            }
-
-            CheckListState();
-        }
-
-        private void CheckListState() {
-            if (!_requesting && MustRefill()) {
-                _requesting = true;
-
-                _provider(RefillNeed(), (pool) => {
-                    _generatedRandoms.AddRange(pool);
-                });
-            }
-
-        }
-
-        private int RefillNeed() {
-            int need = _capacity - count;
-            return _policy == RefillPolicy.KEEP_FULL ? (int)(need * 1.5f) : need; 
-        }
-
-        private bool MustRefill() {
-            switch (_policy) {
-                case RefillPolicy.EMPTY: return isEmpty;
-                case RefillPolicy.HALF_QUEUE: return count < _capacity;
-                case RefillPolicy.KEEP_FULL: return count < _capacity;
-            }
-            return false;
-        }
-
+    /// <summary>
+    /// Generates an auto-refill pool of <paramref name="capacity"/> true random booleans.
+    /// It makes an asynchronus refill considering the <paramref name="refillPolicy"/>.
+    /// It take a few time to be refilled. See <see cref="InfiniteQueue{T}"/>.
+    /// </summary>
+    /// <param name="capacity">The amount of values holded.</param>
+    /// <param name="refillPolicy">The rules to perform an asynchronus refill.</param>
+    /// <returns>A configured <see cref="InfiniteQueue{T}"/></returns>
+    public InfiniteQueue<bool> InfiniteBoolPool(int capacity, RefillPolicy refillPolicy) {
+        return new InfiniteQueue<bool>(capacity, GenerateBoolPool, refillPolicy);
     }
+
+    /// <summary>
+    /// Generates an auto-refill pool of <paramref name="capacity"/> true random bytes.
+    /// It makes an asynchronus refill considering the <paramref name="refillPolicy"/>.
+    /// It take a few time to be refilled. See <see cref="InfiniteQueue{T}"/>.
+    /// </summary>
+    /// <param name="capacity">The amount of values holded.</param>
+    /// <param name="refillPolicy">The rules to perform an asynchronus refill.</param>
+    /// <returns>A configured <see cref="InfiniteQueue{T}"/></returns>
+    public InfiniteQueue<byte> InfiniteBytePool(int capacity, RefillPolicy refillPolicy) {
+        return new InfiniteQueue<byte>(capacity, GenerateBytePool, refillPolicy);
+    }
+
+    /// <summary>
+    /// Generates an auto-refill pool of <paramref name="capacity"/> true random 16bit ints.
+    /// It makes an asynchronus refill considering the <paramref name="refillPolicy"/>.
+    /// It take a few time to be refilled. See <see cref="InfiniteQueue{T}"/>.
+    /// </summary>
+    /// <param name="capacity">The amount of values holded.</param>
+    /// <param name="refillPolicy">The rules to perform an asynchronus refill.</param>
+    /// <returns>A configured <see cref="InfiniteQueue{T}"/></returns>
+    public InfiniteQueue<int> InfiniteInt16Pool(int capacity, RefillPolicy refillPolicy) {
+        return new InfiniteQueue<int>(capacity, GenerateInt16Pool, refillPolicy);
+    }
+
+    /// <summary>
+    /// Generates an auto-refill pool of <paramref name="capacity"/> true random ints.
+    /// It makes an asynchronus refill considering the <paramref name="refillPolicy"/>.
+    /// It take a few time to be refilled. See <see cref="InfiniteQueue{T}"/>.
+    /// </summary>
+    /// <param name="capacity">The amount of values holded.</param>
+    /// <param name="refillPolicy">The rules to perform an asynchronus refill.</param>
+    /// <returns>A configured <see cref="InfiniteQueue{T}"/></returns>
+    public InfiniteQueue<int> InfiniteInt32Pool(int capacity, RefillPolicy refillPolicy) {
+        return new InfiniteQueue<int>(capacity, GenerateInt32Pool, refillPolicy);
+    }
+
+    /// <summary>
+    /// Generates an auto-refill pool of <paramref name="capacity"/> true random floats in the range [0, 1].
+    /// It makes an asynchronus refill considering the <paramref name="refillPolicy"/>.
+    /// It take a few time to be refilled. See <see cref="InfiniteQueue{T}"/>.
+    /// </summary>
+    /// <param name="capacity">The amount of values holded.</param>
+    /// <param name="refillPolicy">The rules to perform an asynchronus refill.</param>
+    /// <returns>A configured <see cref="InfiniteQueue{T}"/></returns>
+    public InfiniteQueue<float> InfiniteFloatPool(int capacity, RefillPolicy refillPolicy) {
+        return new InfiniteQueue<float>(capacity, GenerateFloatPool, refillPolicy);
+    }
+
+    /// <summary>
+    /// Generates a pool of <paramref name="count"/> true random floats in the range [<paramref name="min"/>, <paramref name="max"/>].
+    /// Generates an auto-refill pool of <paramref name="capacity"/> true random floats in the range [<paramref name="min"/>, <paramref name="max"/>].
+    /// It makes an asynchronus refill considering the <paramref name="refillPolicy"/>.
+    /// It take a few time to be refilled. See <see cref="InfiniteQueue{T}"/>.
+    /// </summary>
+    /// <param name="capacity">The amount of values holded.</param>
+    /// <param name="min">The smallest number generated</param>
+    /// <param name="max">The largest number generated</param>
+    /// <param name="refillPolicy">The rules to perform an asynchronus refill.</param>
+    /// <returns>A configured <see cref="InfiniteQueue{T}"/></returns>
+    public InfiniteQueue<float> InfiniteFloatPoolInRange(int capacity, float min, float max, RefillPolicy refillPolicy) {
+        return new InfiniteQueue<float>(capacity, (count, pool) => GenerateFloatPoolInRange(count, min, max, pool), refillPolicy);
+    }
+
+#endregion
 
 
     /// <summary>
@@ -521,6 +487,30 @@ public class QASMRandomProvider : MonoBehaviour {
             Debug.Log($"Generated: {s}");
         });
     }
+
+    [ContextMenu("Generate inf Bools")]
+    private void TryGetInfiniteBool() {
+        InfiniteQueue<bool> queue = InfiniteBoolPool(10, RefillPolicy.KEEP_FULL);
+        StartCoroutine(ExtractFromQueue(queue, 30));
+    }
+    [ContextMenu("Generate inf Floats")]
+    private void TryGetInfiniteFloatsRange() {
+        InfiniteQueue<float> queue = InfiniteFloatPoolInRange(20, -10, 100, RefillPolicy.EMPTY);
+        StartCoroutine(ExtractFromQueue(queue, 30));
+    }
+    [ContextMenu("Generate inf Ints")]
+    private void TryGetInfiniteIntsRange() {
+        InfiniteQueue<int> queue = InfiniteInt16Pool(10, RefillPolicy.HALF_QUEUE);
+        StartCoroutine(ExtractFromQueue(queue, 15));
+    }
+    private IEnumerator ExtractFromQueue<T>(InfiniteQueue<T> queue, int extractions) {
+        for(int i = 0; i < extractions; i++) {
+            yield return new WaitWhile(() => queue.isEmpty);
+            Debug.Log(queue.PopNext());
+        }
+        Debug.Log($"Count : {queue.count}");
+    }
+
     #endregion
 #endif
 
