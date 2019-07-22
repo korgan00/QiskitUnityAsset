@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -35,15 +36,9 @@ namespace Qiskit {
 
         private QASMSession executionSession => specificSession ?? QASMSession.instance;
 
-        public delegate void OnRandomBoolGenerated(bool generated);
-        public delegate void OnRandomByteGenerated(byte generated);
-        public delegate void OnRandomIntGenerated(int generated);
-        public delegate void OnRandomFloatGenerated(float generated);
+        //public delegate void OnRandomGenerated<T>(T generated);
 
-        public delegate void OnRandomBoolPoolGenerated(List<bool> pool);
-        public delegate void OnRandomBytePoolGenerated(List<byte> pool);
-        public delegate void OnRandomIntPoolGenerated(List<int> pool);
-        public delegate void OnRandomFloatPoolGenerated(List<float> pool);
+        //public delegate void OnRandomPoolGenerated<T>(List<T> pool);
 
         #region Single Value Generation Methods
 
@@ -53,7 +48,7 @@ namespace Qiskit {
         /// the callback <see cref="OnRandomBoolGenerated"/>
         /// </summary>
         /// <param name="onRandomBoolGenerated">The callback called when the bool is available</param>
-        public void GenerateBool(OnRandomBoolGenerated onRandomBoolGenerated) {
+        public void GenerateBool(Action<bool> onRandomBoolGenerated) {
             // For bool values should be an even number of shots
             QASMExecutable qasmExe = new QASMExecutable(_qasmSingleBoolCode, 15);
 
@@ -68,7 +63,7 @@ namespace Qiskit {
         /// the callback <see cref="OnRandomByteGenerated"/>
         /// </summary>
         /// <param name="onRandomByteGenerated">The callback called when the byte is available</param>
-        public void GenerateByte(OnRandomByteGenerated onRandomByteGenerated) {
+        public void GenerateByte(Action<byte> onRandomByteGenerated) {
             GenerateIntNbits(8, (i) => onRandomByteGenerated((byte)i));
         }
 
@@ -78,7 +73,7 @@ namespace Qiskit {
         /// the callback <see cref="OnRandomIntGenerated"/>
         /// </summary>
         /// <param name="onRandomIntGenerated">The callback called when the int is available</param>
-        public void GenerateInt16(OnRandomIntGenerated onRandomIntGenerated) {
+        public void GenerateInt16(Action<int> onRandomIntGenerated) {
             GenerateIntNbits(16, onRandomIntGenerated);
         }
 
@@ -88,7 +83,7 @@ namespace Qiskit {
         /// the callback <see cref="OnRandomIntGenerated"/>
         /// </summary>
         /// <param name="onRandomIntGenerated">The callback called when the int is available</param>
-        public void GenerateInt32(OnRandomIntGenerated onRandomIntGenerated) {
+        public void GenerateInt32(Action<int> onRandomIntGenerated) {
             GenerateIntNbits(32, onRandomIntGenerated);
         }
 
@@ -98,7 +93,7 @@ namespace Qiskit {
         /// the callback <see cref="OnRandomFloatGenerated"/>
         /// </summary>
         /// <param name="onRandomFloatGenerated">The callback called when the float is available</param>
-        public void GenerateFloat(OnRandomFloatGenerated onRandomFloatGenerated) {
+        public void GenerateFloat(Action<float> onRandomFloatGenerated) {
             GenerateInt32((i) => {
                 onRandomFloatGenerated(Int32ToFloat(i));
             });
@@ -112,7 +107,7 @@ namespace Qiskit {
         /// <param name="min">The smallest number generated</param>
         /// <param name="max">The largest number generated</param>
         /// <param name="onRandomFloatGenerated">The callback called when the float is available</param>
-        public void GenerateFloatInRange(float min, float max, OnRandomFloatGenerated onRandomFloatGenerated) {
+        public void GenerateFloatInRange(float min, float max, Action<float> onRandomFloatGenerated) {
             GenerateInt32((i) => {
                 onRandomFloatGenerated(Int32ToFloat(i, min, max));
             });
@@ -125,7 +120,7 @@ namespace Qiskit {
         /// </summary>
         /// <param name="bits">The number of bits used to generate the int</param>
         /// <param name="onRandomFloatGenerated">The callback called when the int is available</param>
-        public void GenerateIntNbits(int bits, OnRandomIntGenerated onRandomIntGenerated) {
+        public void GenerateIntNbits(int bits, Action<int> onRandomIntGenerated) {
             executionSession.RequestBackendConfig((backendConfig) => {
                 int codeRegs = Mathf.Min(backendConfig.qubitsCount, bits);
                 int shotsNeeded = Mathf.CeilToInt((float)bits / codeRegs);
@@ -153,7 +148,7 @@ namespace Qiskit {
         /// </summary>
         /// <param name="count">The amount of booleans generated</param>
         /// <param name="onRandomBoolPoolGenerated">The callback called when the pool is available</param>
-        public void GenerateBoolPool(int count, OnRandomBoolPoolGenerated onRandomBoolPoolGenerated) {
+        public void GenerateBoolPool(int count, Action<List<bool>> onRandomBoolPoolGenerated) {
             QASMExecutable qasmExe = new QASMExecutable(_qasmSingleBoolCode, count);
 
             executionSession.ExecuteCodeRawResult(qasmExe, (response) => {
@@ -172,7 +167,7 @@ namespace Qiskit {
         /// </summary>
         /// <param name="count">The amount of bytes generated</param>
         /// <param name="onRandomBytePoolGenerated">The callback called when the pool is available</param>
-        public void GenerateBytePool(int count, OnRandomBytePoolGenerated onRandomBytePoolGenerated) {
+        public void GenerateBytePool(int count, Action<List<byte>> onRandomBytePoolGenerated) {
             GenerateIntNbitsPool(8, count, (intPool) => {
                 // cast from int to byte
                 List<byte> bytePool = new List<byte>();
@@ -190,7 +185,7 @@ namespace Qiskit {
         /// </summary>
         /// <param name="count">The amount of 16bit ints generated</param>
         /// <param name="onRandomIntPoolGenerated">The callback called when the pool is available</param>
-        public void GenerateInt16Pool(int count, OnRandomIntPoolGenerated onRandomIntPoolGenerated) {
+        public void GenerateInt16Pool(int count, Action<List<int>> onRandomIntPoolGenerated) {
             GenerateIntNbitsPool(16, count, onRandomIntPoolGenerated);
         }
 
@@ -201,7 +196,7 @@ namespace Qiskit {
         /// </summary>
         /// <param name="count">The amount of ints generated</param>
         /// <param name="onRandomIntPoolGenerated">The callback called when the pool is available</param>
-        public void GenerateInt32Pool(int count, OnRandomIntPoolGenerated onRandomIntPoolGenerated) {
+        public void GenerateInt32Pool(int count, Action<List<int>> onRandomIntPoolGenerated) {
             GenerateIntNbitsPool(32, count, onRandomIntPoolGenerated);
         }
 
@@ -212,7 +207,7 @@ namespace Qiskit {
         /// </summary>
         /// <param name="count">The amount of floats generated</param>
         /// <param name="onRandomFloatPoolGenerated">The callback called when the pool is available</param>
-        public void GenerateFloatPool(int count, OnRandomFloatPoolGenerated onRandomFloatPoolGenerated) {
+        public void GenerateFloatPool(int count, Action<List<float>> onRandomFloatPoolGenerated) {
             GenerateIntNbitsPool(32, count, (intPool) => {
                 List<float> floatPool = new List<float>();
                 foreach (int i in intPool) {
@@ -231,7 +226,7 @@ namespace Qiskit {
         /// <param name="min">The smallest number generated</param>
         /// <param name="max">The largest number generated</param>
         /// <param name="onRandomFloatPoolGenerated">The callback called when the pool is available</param>
-        public void GenerateFloatPoolInRange(int count, float min, float max, OnRandomFloatPoolGenerated onRandomFloatPoolGenerated) {
+        public void GenerateFloatPoolInRange(int count, float min, float max, Action<List<float>> onRandomFloatPoolGenerated) {
             GenerateIntNbitsPool(32, count, (intPool) => {
                 List<float> floatPool = new List<float>();
                 foreach (int i in intPool) {
@@ -241,8 +236,6 @@ namespace Qiskit {
             });
         }
 
-
-
         /// <summary>
         /// Generates a pool of <paramref name="count"/> true random ints of n <paramref name="bits"/>.
         /// It makes an asynchronous operation so the value is returned through 
@@ -251,7 +244,7 @@ namespace Qiskit {
         /// <param name="bits">The number of bits used to generate the int</param>
         /// <param name="count">The amount of ints generated</param>
         /// <param name="onRandomIntPoolGenerated">The callback called when the pool is available</param>
-        public void GenerateIntNbitsPool(int bits, int count, OnRandomIntPoolGenerated onRandomIntPoolGenerated) {
+        public void GenerateIntNbitsPool(int bits, int count, Action<List<int>> onRandomIntPoolGenerated) {
             executionSession.RequestBackendConfig((backendConfig) => {
                 int codeRegs = Mathf.Min(backendConfig.qubitsCount, bits);
                 int shotsNeededPerItem = Mathf.CeilToInt((float)bits / codeRegs);
@@ -275,6 +268,85 @@ namespace Qiskit {
 
         #endregion
 
+
+        #region Pool Of Values Generation Methods
+
+        /// <summary>
+        /// Generates an auto-refill pool of <paramref name="capacity"/> true random booleans.
+        /// It makes an asynchronus refill considering the <paramref name="refillPolicy"/>.
+        /// It take a few time to be refilled. See <see cref="InfiniteQueue{T}"/>.
+        /// </summary>
+        /// <param name="capacity">The amount of values holded.</param>
+        /// <param name="refillPolicy">The rules to perform an asynchronus refill.</param>
+        /// <returns>A configured <see cref="InfiniteQueue{T}"/></returns>
+        public InfiniteQueue<bool> InfiniteBoolPool(int capacity, RefillPolicy refillPolicy) {
+            return new InfiniteQueue<bool>(capacity, GenerateBoolPool, refillPolicy);
+        }
+
+        /// <summary>
+        /// Generates an auto-refill pool of <paramref name="capacity"/> true random bytes.
+        /// It makes an asynchronus refill considering the <paramref name="refillPolicy"/>.
+        /// It take a few time to be refilled. See <see cref="InfiniteQueue{T}"/>.
+        /// </summary>
+        /// <param name="capacity">The amount of values holded.</param>
+        /// <param name="refillPolicy">The rules to perform an asynchronus refill.</param>
+        /// <returns>A configured <see cref="InfiniteQueue{T}"/></returns>
+        public InfiniteQueue<byte> InfiniteBytePool(int capacity, RefillPolicy refillPolicy) {
+            return new InfiniteQueue<byte>(capacity, GenerateBytePool, refillPolicy);
+        }
+
+        /// <summary>
+        /// Generates an auto-refill pool of <paramref name="capacity"/> true random 16bit ints.
+        /// It makes an asynchronus refill considering the <paramref name="refillPolicy"/>.
+        /// It take a few time to be refilled. See <see cref="InfiniteQueue{T}"/>.
+        /// </summary>
+        /// <param name="capacity">The amount of values holded.</param>
+        /// <param name="refillPolicy">The rules to perform an asynchronus refill.</param>
+        /// <returns>A configured <see cref="InfiniteQueue{T}"/></returns>
+        public InfiniteQueue<int> InfiniteInt16Pool(int capacity, RefillPolicy refillPolicy) {
+            return new InfiniteQueue<int>(capacity, GenerateInt16Pool, refillPolicy);
+        }
+
+        /// <summary>
+        /// Generates an auto-refill pool of <paramref name="capacity"/> true random ints.
+        /// It makes an asynchronus refill considering the <paramref name="refillPolicy"/>.
+        /// It take a few time to be refilled. See <see cref="InfiniteQueue{T}"/>.
+        /// </summary>
+        /// <param name="capacity">The amount of values holded.</param>
+        /// <param name="refillPolicy">The rules to perform an asynchronus refill.</param>
+        /// <returns>A configured <see cref="InfiniteQueue{T}"/></returns>
+        public InfiniteQueue<int> InfiniteInt32Pool(int capacity, RefillPolicy refillPolicy) {
+            return new InfiniteQueue<int>(capacity, GenerateInt32Pool, refillPolicy);
+        }
+
+        /// <summary>
+        /// Generates an auto-refill pool of <paramref name="capacity"/> true random floats in the range [0, 1].
+        /// It makes an asynchronus refill considering the <paramref name="refillPolicy"/>.
+        /// It take a few time to be refilled. See <see cref="InfiniteQueue{T}"/>.
+        /// </summary>
+        /// <param name="capacity">The amount of values holded.</param>
+        /// <param name="refillPolicy">The rules to perform an asynchronus refill.</param>
+        /// <returns>A configured <see cref="InfiniteQueue{T}"/></returns>
+        public InfiniteQueue<float> InfiniteFloatPool(int capacity, RefillPolicy refillPolicy) {
+            return new InfiniteQueue<float>(capacity, GenerateFloatPool, refillPolicy);
+        }
+
+        /// <summary>
+        /// Generates a pool of <paramref name="count"/> true random floats in the range [<paramref name="min"/>, <paramref name="max"/>].
+        /// Generates an auto-refill pool of <paramref name="capacity"/> true random floats in the range [<paramref name="min"/>, <paramref name="max"/>].
+        /// It makes an asynchronus refill considering the <paramref name="refillPolicy"/>.
+        /// It take a few time to be refilled. See <see cref="InfiniteQueue{T}"/>.
+        /// </summary>
+        /// <param name="capacity">The amount of values holded.</param>
+        /// <param name="min">The smallest number generated</param>
+        /// <param name="max">The largest number generated</param>
+        /// <param name="refillPolicy">The rules to perform an asynchronus refill.</param>
+        /// <returns>A configured <see cref="InfiniteQueue{T}"/></returns>
+        public InfiniteQueue<float> InfiniteFloatPoolInRange(int capacity, float min, float max, RefillPolicy refillPolicy) {
+            return new InfiniteQueue<float>(capacity, (count, pool) => GenerateFloatPoolInRange(count, min, max, pool), refillPolicy);
+        }
+
+        #endregion
 
         /// <summary>
         /// Limits <paramref name="n"/> to <paramref name="bits"/>
@@ -413,6 +485,30 @@ namespace Qiskit {
                 Debug.Log($"Generated: {s}");
             });
         }
+
+        [ContextMenu("Generate inf Bools")]
+        private void TryGetInfiniteBool() {
+            InfiniteQueue<bool> queue = InfiniteBoolPool(10, RefillPolicy.KEEP_FULL);
+            StartCoroutine(ExtractFromQueue(queue, 30));
+        }
+        [ContextMenu("Generate inf Floats")]
+        private void TryGetInfiniteFloatsRange() {
+            InfiniteQueue<float> queue = InfiniteFloatPoolInRange(20, -10, 100, RefillPolicy.EMPTY);
+            StartCoroutine(ExtractFromQueue(queue, 30));
+        }
+        [ContextMenu("Generate inf Ints")]
+        private void TryGetInfiniteIntsRange() {
+            InfiniteQueue<int> queue = InfiniteInt16Pool(10, RefillPolicy.HALF_QUEUE);
+            StartCoroutine(ExtractFromQueue(queue, 15));
+        }
+        private IEnumerator ExtractFromQueue<T>(InfiniteQueue<T> queue, int extractions) {
+            for (int i = 0; i < extractions; i++) {
+                yield return new WaitWhile(() => queue.isEmpty);
+                Debug.Log(queue.PopNext());
+            }
+            Debug.Log($"Count : {queue.count}");
+        }
+
         #endregion
 #endif
 
